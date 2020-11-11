@@ -1,4 +1,4 @@
-package log
+package kisslogger
 
 import (
 	"context"
@@ -14,6 +14,7 @@ type Body map[string]interface{}
 
 type Client struct {
 	priorityLevel uint
+	PrintlnFn     func(...interface{}) (int, error)
 }
 
 func New(level string) Client {
@@ -33,6 +34,7 @@ func New(level string) Client {
 
 	return Client{
 		priorityLevel: priority,
+		PrintlnFn:     fmt.Println,
 	}
 }
 
@@ -44,7 +46,7 @@ func (c Client) Debug(ctx context.Context, title string, valueMaps ...Body) {
 	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
 	logValues = mergeMapsUnsafe(logValues, valueMaps...)
 
-	fmt.Println(buildJSONString("DEBUG", title, logValues))
+	c.PrintlnFn(buildJSONString("DEBUG", title, logValues))
 }
 
 func (c Client) Info(ctx context.Context, title string, valueMaps ...Body) {
@@ -55,7 +57,7 @@ func (c Client) Info(ctx context.Context, title string, valueMaps ...Body) {
 	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
 	logValues = mergeMapsUnsafe(logValues, valueMaps...)
 
-	fmt.Println(buildJSONString("INFO", title, logValues))
+	c.PrintlnFn(buildJSONString("INFO", title, logValues))
 }
 
 func (c Client) Warn(ctx context.Context, title string, valueMaps ...Body) {
@@ -66,7 +68,7 @@ func (c Client) Warn(ctx context.Context, title string, valueMaps ...Body) {
 	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
 	logValues = mergeMapsUnsafe(logValues, valueMaps...)
 
-	fmt.Println(buildJSONString("WARN", title, logValues))
+	c.PrintlnFn(buildJSONString("WARN", title, logValues))
 }
 
 func (c Client) Error(ctx context.Context, title string, valueMaps ...Body) {
@@ -77,7 +79,7 @@ func (c Client) Error(ctx context.Context, title string, valueMaps ...Body) {
 	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
 	logValues = mergeMapsUnsafe(logValues, valueMaps...)
 
-	fmt.Println(buildJSONString("ERROR", title, logValues))
+	c.PrintlnFn(buildJSONString("ERROR", title, logValues))
 }
 
 func buildJSONString(level string, title string, body Body) string {

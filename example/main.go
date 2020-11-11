@@ -14,7 +14,7 @@ func main() {
 	logger.Info(ctx, "testing-log")
 
 	logger.Warn(ctx, "testing-log-with-values", log.Body{
-		"msg": "deu certo!",
+		"msg": "it worked!",
 	})
 
 	ctx = log.CtxWithValues(ctx, log.Body{

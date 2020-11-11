@@ -1,6 +1,8 @@
-package log
+package kisslogger
 
-import "context"
+import (
+	"context"
+)
 
 // Declaring a unique private type for the ctx key
 // guarantees that no key colision will ever happen:
