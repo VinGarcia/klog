@@ -1,3 +1,3 @@
 
-run:
-	go run main.go
+run-example:
+	go run example/main.go
