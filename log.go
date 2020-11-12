@@ -14,7 +14,7 @@ type Body map[string]interface{}
 
 type Client struct {
 	priorityLevel uint
-	PrintlnFn     func(...interface{}) (int, error)
+	PrintlnFn     func(...interface{})
 }
 
 func New(level string) Client {
@@ -34,7 +34,9 @@ func New(level string) Client {
 
 	return Client{
 		priorityLevel: priority,
-		PrintlnFn:     fmt.Println,
+		PrintlnFn: func(args ...interface{}) {
+			fmt.Println(args...)
+		},
 	}
 }
 
@@ -90,18 +92,22 @@ func buildJSONString(level string, title string, body Body) string {
 	delete(body, "title")
 	delete(body, "timestamp")
 
-	var prefix string
+	var separator = ""
 	var bodyJSON []byte = []byte("{}")
 	var err error
 	if len(body) > 0 {
-		prefix = ","
+		separator = ","
 
 		bodyJSON, err = json.Marshal(body)
 		if err != nil {
+			// Marshalling this string is necessary for
+			// escaping characters such as '"'
+			bodyString, _ := json.Marshal(fmt.Sprintf("%#v", body))
+
 			return fmt.Sprintf(
-				`{"level":"ERROR","title":"could-not-marshal-log-body","body":"%#v","timestamp":"%s"}%s`,
-				body,
+				`{"level":"ERROR","title":"could-not-marshal-log-body","timestamp":"%s","body":%s}%s`,
 				time.Now().Format(time.RFC3339),
+				bodyString,
 				"\n",
 			)
 		}
@@ -114,7 +120,7 @@ func buildJSONString(level string, title string, body Body) string {
 		level,
 		string(titleJSON),
 		timestamp,
-		prefix,
+		separator,
 		string(bodyJSON[1:]),
 	)
 }
