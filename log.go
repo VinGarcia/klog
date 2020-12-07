@@ -12,11 +12,13 @@ import (
 // used to build the structured logs
 type Body map[string]interface{}
 
+// Client is the logger client, to instantiate it call `New()`
 type Client struct {
 	priorityLevel uint
 	PrintlnFn     func(...interface{})
 }
 
+// New builds a logger Client on the appropriate log level
 func New(level string) Client {
 	var priority uint
 	switch strings.ToUpper(level) {
@@ -116,10 +118,10 @@ func buildJSONString(level string, title string, body Body) string {
 	titleJSON, _ := json.Marshal(title)
 
 	return fmt.Sprintf(
-		`{"level":"%s","title":%s,"timestamp":"%s"%s%s`,
+		`{"timestamp":"%s","level":"%s","title":%s%s%s`,
+		timestamp,
 		level,
 		string(titleJSON),
-		timestamp,
 		separator,
 		string(bodyJSON[1:]),
 	)
