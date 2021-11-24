@@ -1,4 +1,4 @@
-module kisslogger
+module klog
 
 go 1.15
 

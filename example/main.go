@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	log "kisslogger"
+	log "klog"
 )
 
 func main() {
