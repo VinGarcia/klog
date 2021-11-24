@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
@@ -30,6 +31,8 @@ func New(level string) Client {
 		priority = 2
 	case "ERROR":
 		priority = 3
+	case "FATAL":
+		priority = 4
 	default:
 		priority = 1
 	}
@@ -84,6 +87,14 @@ func (c Client) Error(ctx context.Context, title string, valueMaps ...Body) {
 	logValues = mergeMapsUnsafe(logValues, valueMaps...)
 
 	c.PrintlnFn(buildJSONString("ERROR", title, logValues))
+}
+
+func (c Client) Fatal(ctx context.Context, title string, valueMaps ...Body) {
+	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
+	logValues = mergeMapsUnsafe(logValues, valueMaps...)
+
+	c.PrintlnFn(buildJSONString("FATAL", title, logValues))
+	os.Exit(1)
 }
 
 func buildJSONString(level string, title string, body Body) string {
