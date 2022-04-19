@@ -49,9 +49,14 @@ import (
 	"klog"
 )
 
+type myLogKey struct{}
+
 func main() {
 	ctx := context.TODO()
-	logger := klog.New("INFO")
+	logger := klog.New("INFO", func(ctx context.Context) klog.Body {
+		body, _ := ctx.Value(myLogKey{}).(klog.Body)
+		return body
+	})
 
 	logger.Debug(ctx, "testing-debug-wont-show-up")
 
@@ -61,12 +66,12 @@ func main() {
 		"msg": "it worked!",
 	})
 
-	ctx = klog.CtxWithValues(ctx, klog.Body{
+	ctx = context.WithValue(ctx, myLogKey{}, klog.Body{
 		"user_id": 41,
 	})
 	logger.Error(ctx, "testing-log-with-context")
 
-	ctx = klog.CtxWithValues(ctx, klog.Body{
+	ctx = context.WithValue(ctx, myLogKey{}, klog.Body{
 		"user_id":    42,
 		"company_id": 22,
 	})
