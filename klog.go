@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -118,34 +119,24 @@ func buildJSONString(level string, title string, body Body) string {
 	delete(body, "title")
 	delete(body, "timestamp")
 
-	var separator = ""
-	var bodyJSON = []byte("{}")
-	var err error
-	if len(body) > 0 {
-		separator = ","
-
-		bodyJSON, err = json.Marshal(body)
-		if err != nil {
-			// Marshalling this string is necessary for
-			// escaping characters such as '"'
-			bodyString, _ := json.Marshal(fmt.Sprintf("%#v", body))
-
-			return fmt.Sprintf(
-				`{"level":"ERROR","title":"could-not-marshal-log-body","timestamp":"%s","body":%s}%s`,
-				time.Now().Format(time.RFC3339),
-				bodyString,
-				"\n",
-			)
-		}
+	values := []string{
+		`"level":"` + level + `"`,
+		`"title":` + escapeAsJSON(title),
+		`"timestamp":"` + timestamp + `"`,
 	}
 
-	titleJSON, _ := json.Marshal(title)
-	return fmt.Sprintf(
-		`{"level":"%s","title":%s,"timestamp":"%s"%s%s`,
-		level,
-		string(titleJSON),
-		timestamp,
-		separator,
-		string(bodyJSON[1:]),
-	)
+	for k, v := range body {
+		values = append(values, escapeAsJSON(k)+`:`+escapeAsJSON(v))
+	}
+	sort.Strings(values[3:])
+
+	return fmt.Sprint("{" + strings.Join(values, ",") + "}")
+}
+
+func escapeAsJSON(obj interface{}) string {
+	rawJSON, err := json.Marshal(obj)
+	if err != nil {
+		return escapeAsJSON(fmt.Sprintf("%#v", obj))
+	}
+	return string(rawJSON)
 }

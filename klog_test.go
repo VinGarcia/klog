@@ -108,30 +108,32 @@ func TestBuildJSONString(t *testing.T) {
 				"value": CannotBeMarshaled{},
 			},
 			expectedOutput: map[string]interface{}{
-				"level": "ERROR",
-				"title": "could-not-marshal-log-body",
-				"body":  fmt.Sprintf("%#v", Body{"value": CannotBeMarshaled{}}),
+				"level": "fake-level",
+				"title": "fake-title",
+				"value": fmt.Sprintf("%#v", CannotBeMarshaled{}),
 				// "timestamp": "can't compare timestamps",
 			},
 		},
 	}
 
 	for _, test := range tests {
-		jsonString := buildJSONString(test.level, test.title, test.body)
-		fmt.Println("String:", jsonString)
+		t.Run(test.desc, func(t *testing.T) {
+			jsonString := buildJSONString(test.level, test.title, test.body)
+			fmt.Println("String:", jsonString)
 
-		var output map[string]interface{}
-		err := json.Unmarshal([]byte(jsonString), &output)
-		assert.Nil(t, err)
+			var output map[string]interface{}
+			err := json.Unmarshal([]byte(jsonString), &output)
+			assert.Nil(t, err)
 
-		timestring, ok := output["timestamp"].(string)
-		assert.True(t, ok)
+			timestring, ok := output["timestamp"].(string)
+			assert.True(t, ok)
 
-		_, err = time.Parse(time.RFC3339, timestring)
-		assert.Nil(t, err)
+			_, err = time.Parse(time.RFC3339, timestring)
+			assert.Nil(t, err)
 
-		delete(output, "timestamp")
-		assert.Equal(t, test.expectedOutput, output)
+			delete(output, "timestamp")
+			assert.Equal(t, test.expectedOutput, output)
+		})
 	}
 }
 
