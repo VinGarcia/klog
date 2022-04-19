@@ -144,9 +144,10 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
-		ctx = CtxWithValues(ctx, Body{
+		ctx = ctxWithValues(ctx, Body{
 			"ctx_value1": "overwritten",
 			"ctx_value2": "overwritten",
 			"ctx_value3": "not-overwritten",
@@ -192,6 +193,7 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
 		client.Debug(ctx, "fake-log-title")
@@ -207,9 +209,10 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
-		ctx = CtxWithValues(ctx, Body{
+		ctx = ctxWithValues(ctx, Body{
 			"ctx_value1": "overwritten",
 			"ctx_value2": "overwritten",
 			"ctx_value3": "not-overwritten",
@@ -255,6 +258,7 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
 		client.Info(ctx, "fake-log-title")
@@ -270,9 +274,10 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
-		ctx = CtxWithValues(ctx, Body{
+		ctx = ctxWithValues(ctx, Body{
 			"ctx_value1": "overwritten",
 			"ctx_value2": "overwritten",
 			"ctx_value3": "not-overwritten",
@@ -318,6 +323,7 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
 		client.Warn(ctx, "fake-log-title")
@@ -333,9 +339,10 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
-		ctx = CtxWithValues(ctx, Body{
+		ctx = ctxWithValues(ctx, Body{
 			"ctx_value1": "overwritten",
 			"ctx_value2": "overwritten",
 			"ctx_value3": "not-overwritten",
@@ -381,6 +388,7 @@ func TestLogFuncs(t *testing.T) {
 			PrintlnFn: func(args ...interface{}) {
 				output = fmt.Sprintln(args...)
 			},
+			ctxParsers: []ContextParser{getCtxValues},
 		}
 
 		client.Error(ctx, "fake-log-title")
@@ -393,4 +401,18 @@ type CannotBeMarshaled struct{}
 
 func (c CannotBeMarshaled) MarshalJSON() ([]byte, error) {
 	return nil, fmt.Errorf("fake-error-message")
+}
+
+func ctxWithValues(ctx context.Context, values Body) context.Context {
+	m, _ := ctx.Value("test-log-key").(Body)
+	MergeMaps(&m, values)
+	return context.WithValue(ctx, "test-log-key", m)
+}
+
+func getCtxValues(ctx context.Context) Body {
+	m, _ := ctx.Value("test-log-key").(Body)
+	if m == nil {
+		return Body{}
+	}
+	return m
 }

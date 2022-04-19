@@ -9,18 +9,18 @@ import (
 	"time"
 )
 
-// Body is the log body containing the keys and values
-// used to build the structured logs
-type Body map[string]interface{}
-
 // Client is the logger client, to instantiate it call `New()`
 type Client struct {
 	priorityLevel uint
 	PrintlnFn     func(...interface{})
+
+	ctxParsers []ContextParser
 }
 
+type ContextParser func(ctx context.Context) Body
+
 // New builds a logger Client on the appropriate log level
-func New(level string) Client {
+func New(level string, parsers ...ContextParser) Client {
 	var priority uint
 	switch strings.ToUpper(level) {
 	case "DEBUG":
@@ -31,8 +31,6 @@ func New(level string) Client {
 		priority = 2
 	case "ERROR":
 		priority = 3
-	case "FATAL":
-		priority = 4
 	default:
 		priority = 1
 	}
@@ -42,59 +40,71 @@ func New(level string) Client {
 		PrintlnFn: func(args ...interface{}) {
 			fmt.Println(args...)
 		},
+		ctxParsers: parsers,
 	}
 }
 
+// Debug logs an entry on level "DEBUG" with the received title
+// along with all the values collected from the input valueMaps and the context.
 func (c Client) Debug(ctx context.Context, title string, valueMaps ...Body) {
 	if c.priorityLevel > 0 {
 		return
 	}
 
-	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
-	logValues = mergeMapsUnsafe(logValues, valueMaps...)
-
-	c.PrintlnFn(buildJSONString("DEBUG", title, logValues))
+	c.log(ctx, "DEBUG", title, valueMaps)
 }
 
+// Info logs an entry on level "INFO" with the received title
+// along with all the values collected from the input valueMaps and the context.
 func (c Client) Info(ctx context.Context, title string, valueMaps ...Body) {
 	if c.priorityLevel > 1 {
 		return
 	}
 
-	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
-	logValues = mergeMapsUnsafe(logValues, valueMaps...)
-
-	c.PrintlnFn(buildJSONString("INFO", title, logValues))
+	c.log(ctx, "INFO", title, valueMaps)
 }
 
+// Warn logs an entry on level "WARN" with the received title
+// along with all the values collected from the input valueMaps and the context.
 func (c Client) Warn(ctx context.Context, title string, valueMaps ...Body) {
 	if c.priorityLevel > 2 {
 		return
 	}
 
-	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
-	logValues = mergeMapsUnsafe(logValues, valueMaps...)
-
-	c.PrintlnFn(buildJSONString("WARN", title, logValues))
+	c.log(ctx, "WARN", title, valueMaps)
 }
 
+// Error logs an entry on level "ERROR" with the received title
+// along with all the values collected from the input valueMaps and the context.
 func (c Client) Error(ctx context.Context, title string, valueMaps ...Body) {
 	if c.priorityLevel > 3 {
 		return
 	}
 
-	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
-	logValues = mergeMapsUnsafe(logValues, valueMaps...)
-
-	c.PrintlnFn(buildJSONString("ERROR", title, logValues))
+	c.log(ctx, "ERROR", title, valueMaps)
 }
 
+// Fatal logs an entry on level "ERROR" with the received title
+// along with all the values collected from the input valueMaps and the context.
+//
+// After that it proceeds to exit the program with code 1.
 func (c Client) Fatal(ctx context.Context, title string, valueMaps ...Body) {
-	logValues := mergeMapsUnsafe(Body{}, GetCtxValues(ctx))
-	logValues = mergeMapsUnsafe(logValues, valueMaps...)
+	if c.priorityLevel > 3 {
+		return
+	}
 
-	c.PrintlnFn(buildJSONString("FATAL", title, logValues))
+	c.log(ctx, "ERROR", title, valueMaps)
 	os.Exit(1)
+}
+
+func (c Client) log(ctx context.Context, level string, title string, valueMaps []Body) {
+	body := Body{}
+	for _, parser := range c.ctxParsers {
+		MergeMaps(&body, parser(ctx))
+	}
+	MergeMaps(&body, valueMaps...)
+
+	c.PrintlnFn(buildJSONString(level, title, body))
 }
 
 func buildJSONString(level string, title string, body Body) string {
@@ -106,7 +116,7 @@ func buildJSONString(level string, title string, body Body) string {
 	delete(body, "timestamp")
 
 	var separator = ""
-	var bodyJSON []byte = []byte("{}")
+	var bodyJSON = []byte("{}")
 	var err error
 	if len(body) > 0 {
 		separator = ","
@@ -127,12 +137,11 @@ func buildJSONString(level string, title string, body Body) string {
 	}
 
 	titleJSON, _ := json.Marshal(title)
-
 	return fmt.Sprintf(
-		`{"timestamp":"%s","level":"%s","title":%s%s%s`,
-		timestamp,
+		`{"level":"%s","title":%s,"timestamp":"%s"%s%s`,
 		level,
 		string(titleJSON),
+		timestamp,
 		separator,
 		string(bodyJSON[1:]),
 	)

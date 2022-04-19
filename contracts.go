@@ -15,3 +15,7 @@ type Provider interface {
 	Error(ctx context.Context, title string, valueMaps ...Body)
 	Fatal(ctx context.Context, title string, valueMaps ...Body)
 }
+
+// Body is the log body containing the keys and values
+// used to build the structured logs
+type Body = map[string]interface{}
