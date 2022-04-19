@@ -13,7 +13,7 @@ import (
 // Client represents our logger instance.
 type Client struct {
 	priorityLevel uint
-	PrintlnFn     func(...interface{})
+	OutputHandler func(level string, title string, body Body)
 
 	ctxParsers []ContextParser
 }
@@ -41,10 +41,10 @@ func New(level string, parsers ...ContextParser) Client {
 
 	return Client{
 		priorityLevel: priority,
-		PrintlnFn: func(args ...interface{}) {
-			fmt.Println(args...)
+		ctxParsers:    parsers,
+		OutputHandler: func(level string, title string, body Body) {
+			fmt.Println(buildJSONString(level, title, body))
 		},
-		ctxParsers: parsers,
 	}
 }
 
@@ -108,9 +108,10 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 	}
 	MergeMaps(&body, valueMaps...)
 
-	c.PrintlnFn(buildJSONString(level, title, body))
+	c.OutputHandler(level, title, body)
 }
 
+// buildJSONString is used as the default OutputHandler.
 func buildJSONString(level string, title string, body Body) string {
 	timestamp := time.Now().Format(time.RFC3339)
 

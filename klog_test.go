@@ -143,8 +143,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -192,8 +192,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 1,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -208,8 +208,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -257,8 +257,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 2,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -273,8 +273,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -322,8 +322,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 3,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -338,8 +338,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -387,8 +387,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 4,
-			PrintlnFn: func(args ...interface{}) {
-				output = fmt.Sprintln(args...)
+			OutputHandler: func(level string, title string, body Body) {
+				output = buildJSONString(level, title, body)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
