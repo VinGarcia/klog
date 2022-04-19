@@ -115,14 +115,14 @@ func buildJSONString(level string, title string, body Body) string {
 	timestamp := time.Now().Format(time.RFC3339)
 
 	// Remove reserved keys from the input map:
+	delete(body, "timestamp")
 	delete(body, "level")
 	delete(body, "title")
-	delete(body, "timestamp")
 
 	values := []string{
+		`"timestamp":"` + timestamp + `"`,
 		`"level":"` + level + `"`,
 		`"title":` + escapeAsJSON(title),
-		`"timestamp":"` + timestamp + `"`,
 	}
 
 	for k, v := range body {
