@@ -403,14 +403,16 @@ func (c CannotBeMarshaled) MarshalJSON() ([]byte, error) {
 	return nil, fmt.Errorf("fake-error-message")
 }
 
+type MyLogKey struct{}
+
 func ctxWithValues(ctx context.Context, values Body) context.Context {
-	m, _ := ctx.Value("test-log-key").(Body)
+	m, _ := ctx.Value(MyLogKey{}).(Body)
 	MergeMaps(&m, values)
-	return context.WithValue(ctx, "test-log-key", m)
+	return context.WithValue(ctx, MyLogKey{}, m)
 }
 
 func getCtxValues(ctx context.Context) Body {
-	m, _ := ctx.Value("test-log-key").(Body)
+	m, _ := ctx.Value(MyLogKey{}).(Body)
 	if m == nil {
 		return Body{}
 	}

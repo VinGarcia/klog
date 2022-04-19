@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Client is the logger client, to instantiate it call `New()`
+// Client represents our logger instance.
 type Client struct {
 	priorityLevel uint
 	PrintlnFn     func(...interface{})
@@ -17,6 +17,9 @@ type Client struct {
 	ctxParsers []ContextParser
 }
 
+// ContextParser is used for reading a log Body from the
+// context allowing the user of the library to customize
+// how to get this information.
 type ContextParser func(ctx context.Context) Body
 
 // New builds a logger Client on the appropriate log level

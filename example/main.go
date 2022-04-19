@@ -5,14 +5,12 @@ import (
 	"klog"
 )
 
-type myLogKeyType struct{}
-
-var myLogKey myLogKeyType
+type myLogKey struct{}
 
 func main() {
 	ctx := context.TODO()
 	logger := klog.New("INFO", func(ctx context.Context) klog.Body {
-		body, _ := ctx.Value(myLogKey).(klog.Body)
+		body, _ := ctx.Value(myLogKey{}).(klog.Body)
 		return body
 	})
 
@@ -24,12 +22,12 @@ func main() {
 		"msg": "it worked!",
 	})
 
-	ctx = context.WithValue(ctx, myLogKey, klog.Body{
+	ctx = context.WithValue(ctx, myLogKey{}, klog.Body{
 		"user_id": 41,
 	})
 	logger.Error(ctx, "testing-log-with-context")
 
-	ctx = context.WithValue(ctx, myLogKey, klog.Body{
+	ctx = context.WithValue(ctx, myLogKey{}, klog.Body{
 		"user_id":    42,
 		"company_id": 22,
 	})
