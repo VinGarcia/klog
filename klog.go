@@ -136,13 +136,13 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 	}
 
 	for _, m := range c.beforeEach {
-		m(&data)
+		m(ctx, &data)
 	}
 
 	c.OutputHandler(&data)
 
 	for _, m := range c.afterEach {
-		m(&data)
+		m(ctx, &data)
 	}
 }
 

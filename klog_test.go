@@ -410,7 +410,7 @@ func TestLogFuncs(t *testing.T) {
 		}
 
 		var args []LogData
-		client.AddBeforeEach(func(data *LogData) {
+		client.AddBeforeEach(func(ctx context.Context, data *LogData) {
 			// Let's modify the title to assert this is possible, and how many times it happened:
 			data.Title += "."
 			args = append(args, LogData{
@@ -419,7 +419,7 @@ func TestLogFuncs(t *testing.T) {
 				Body:  data.Body,
 			})
 		})
-		client.AddAfterEach(func(data *LogData) {
+		client.AddAfterEach(func(ctx context.Context, data *LogData) {
 			// Let's modify the title to assert this is possible, and how many times it happened:
 			data.Title += "."
 			args = append(args, LogData{
@@ -494,24 +494,24 @@ func TestLogFuncs(t *testing.T) {
 		}
 
 		var args []string
-		client.AddBeforeEach(func(*LogData) {
+		client.AddBeforeEach(func(context.Context, *LogData) {
 			args = append(args, "b1")
 		})
-		client.AddAfterEach(func(*LogData) {
+		client.AddAfterEach(func(context.Context, *LogData) {
 			args = append(args, "a1")
 		})
 
-		client.AddBeforeEach(func(*LogData) {
+		client.AddBeforeEach(func(context.Context, *LogData) {
 			args = append(args, "b2")
 		})
-		client.AddAfterEach(func(*LogData) {
+		client.AddAfterEach(func(context.Context, *LogData) {
 			args = append(args, "a2")
 		})
 
-		client.AddBeforeEach(func(*LogData) {
+		client.AddBeforeEach(func(context.Context, *LogData) {
 			args = append(args, "b3")
 		})
-		client.AddAfterEach(func(*LogData) {
+		client.AddAfterEach(func(context.Context, *LogData) {
 			args = append(args, "a3")
 		})
 
