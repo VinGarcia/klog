@@ -19,3 +19,12 @@ type Provider interface {
 // Body is the log body containing the keys and values
 // used to build the structured logs
 type Body = map[string]interface{}
+
+// MiddlewareProvider describes the behavior of accepting
+// middlewares that will be executed everytime a log function is called.
+type MiddlewareProvider interface {
+	AddMiddleware(m Middleware)
+}
+
+// Middleware represents a klog.Middleware
+type Middleware func(level string, title string, body Body)

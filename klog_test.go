@@ -119,7 +119,6 @@ func TestBuildJSONString(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			jsonString := buildJSONString(test.level, test.title, test.body)
-			fmt.Println("String:", jsonString)
 
 			var output map[string]interface{}
 			err := json.Unmarshal([]byte(jsonString), &output)
@@ -396,6 +395,57 @@ func TestLogFuncs(t *testing.T) {
 		client.Error(ctx, "fake-log-title")
 
 		assert.Equal(t, "", output)
+	})
+
+	t.Run("should run the middlewares in the correct order", func(t *testing.T) {
+		ctx := context.TODO()
+
+		client := Client{
+			priorityLevel: 1, // Should not run the debug log
+			OutputHandler: func(level string, title string, body Body) {},
+		}
+
+		var args []map[string]any
+		client.AddMiddleware(func(level string, title string, body Body) {
+			args = append(args, map[string]any{
+				"level": level,
+				"title": title,
+				"body":  body,
+			})
+		})
+
+		client.Debug(ctx, "debug-log-title", Body{"debugLog": "won't appear"})
+		client.Info(ctx, "info-log-title", Body{"infoLog": "value1"})
+		client.Warn(ctx, "warn-log-title", Body{"warnLog": "value2"})
+		client.Error(ctx, "error-log-title",
+			Body{"errorLog": "overriden"},
+			Body{"errorLog": "value3", "other": "value4"},
+		)
+
+		assert.Equal(t, args, []map[string]any{
+			map[string]any{
+				"level": "INFO",
+				"title": "info-log-title",
+				"body": Body{
+					"infoLog": "value1",
+				},
+			},
+			map[string]any{
+				"level": "WARN",
+				"title": "warn-log-title",
+				"body": Body{
+					"warnLog": "value2",
+				},
+			},
+			map[string]any{
+				"level": "ERROR",
+				"title": "error-log-title",
+				"body": Body{
+					"errorLog": "value3",
+					"other":    "value4",
+				},
+			},
+		})
 	})
 }
 

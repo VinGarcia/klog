@@ -10,10 +10,16 @@ import (
 	"time"
 )
 
+type any = interface{}
+
+var _ Provider = &Client{}
+var _ MiddlewareProvider = &Client{}
+
 // Client represents our logger instance.
 type Client struct {
 	priorityLevel uint
 	OutputHandler func(level string, title string, body Body)
+	middlewares   []Middleware
 
 	ctxParsers []ContextParser
 }
@@ -46,6 +52,13 @@ func New(level string, parsers ...ContextParser) Client {
 			fmt.Println(buildJSONString(level, title, body))
 		},
 	}
+}
+
+// AddMiddleware adds a new middleware to the list.
+// The middlewares will be executed in the provided order before
+// every message gets logged.
+func (c *Client) AddMiddleware(m Middleware) {
+	c.middlewares = append(c.middlewares, m)
 }
 
 // Debug logs an entry on level "DEBUG" with the received title
@@ -107,6 +120,10 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 		MergeMaps(&body, parser(ctx))
 	}
 	MergeMaps(&body, valueMaps...)
+
+	for _, m := range c.middlewares {
+		m(level, title, body)
+	}
 
 	c.OutputHandler(level, title, body)
 }
