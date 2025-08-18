@@ -27,7 +27,9 @@ type MiddlewareProvider interface {
 	AddAfterEach(m Middleware)
 }
 
-// Middleware represents a klog.Middleware
+// Middleware is a function that will be executed before or after
+// an event is logged depending on whether it was registered
+// with the AddBeforeEach or AddAfterEach method.
 type Middleware func(*LogData)
 
 // LogData represents all the data within a single log message
