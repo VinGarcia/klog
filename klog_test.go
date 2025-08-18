@@ -397,7 +397,7 @@ func TestLogFuncs(t *testing.T) {
 		assert.Equal(t, "", output)
 	})
 
-	t.Run("should run the middlewares in the correct order", func(t *testing.T) {
+	t.Run("should run the middlewares when a log function is called", func(t *testing.T) {
 		ctx := context.TODO()
 
 		client := Client{
@@ -446,6 +446,30 @@ func TestLogFuncs(t *testing.T) {
 				},
 			},
 		})
+	})
+
+	t.Run("should run the middlewares in the correct order", func(t *testing.T) {
+		ctx := context.TODO()
+
+		client := Client{
+			priorityLevel: 0,
+			OutputHandler: func(level string, title string, body Body) {},
+		}
+
+		var args []string
+		client.AddMiddleware(func(level string, title string, body Body) {
+			args = append(args, "m1")
+		})
+		client.AddMiddleware(func(level string, title string, body Body) {
+			args = append(args, "m2")
+		})
+		client.AddMiddleware(func(level string, title string, body Body) {
+			args = append(args, "m3")
+		})
+
+		client.Debug(ctx, "log-title")
+
+		assert.Equal(t, args, []string{"m1", "m2", "m3"})
 	})
 }
 
