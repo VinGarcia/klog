@@ -10,16 +10,15 @@ import (
 	"time"
 )
 
-type any = interface{}
-
 var _ Provider = &Client{}
 var _ MiddlewareProvider = &Client{}
 
 // Client represents our logger instance.
 type Client struct {
 	priorityLevel uint
-	OutputHandler func(level string, title string, body Body)
-	middlewares   []Middleware
+	OutputHandler func(*LogData)
+	beforeEach    []Middleware
+	afterEach     []Middleware
 
 	ctxParsers []ContextParser
 }
@@ -48,17 +47,26 @@ func New(level string, parsers ...ContextParser) Client {
 	return Client{
 		priorityLevel: priority,
 		ctxParsers:    parsers,
-		OutputHandler: func(level string, title string, body Body) {
-			fmt.Println(buildJSONString(level, title, body))
+		OutputHandler: func(data *LogData) {
+			fmt.Println(buildJSONString(data))
 		},
 	}
 }
 
-// AddMiddleware adds a new middleware to the list.
-// The middlewares will be executed in the provided order before
-// every message gets logged.
-func (c *Client) AddMiddleware(m Middleware) {
-	c.middlewares = append(c.middlewares, m)
+// AddBeforeEach adds a new middleware to the list that runs before
+// each log message gets logged.
+//
+// These middlewares will be executed in the order they are added.
+func (c *Client) AddBeforeEach(m Middleware) {
+	c.beforeEach = append(c.beforeEach, m)
+}
+
+// AddAfterEach adds a new middleware to the list that runs after
+// each log message gets logged.
+//
+// These middlewares will be executed in the order they are added.
+func (c *Client) AddAfterEach(m Middleware) {
+	c.afterEach = append(c.afterEach, m)
 }
 
 // Debug logs an entry on level "DEBUG" with the received title
@@ -121,29 +129,43 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 	}
 	MergeMaps(&body, valueMaps...)
 
-	for _, m := range c.middlewares {
-		m(level, title, body)
+	data := LogData{
+		Level: level,
+		Title: title,
+		Body:  body,
 	}
 
-	c.OutputHandler(level, title, body)
+	for _, m := range c.beforeEach {
+		m(&data)
+	}
+
+	c.OutputHandler(&data)
+
+	for _, m := range c.afterEach {
+		m(&data)
+	}
+}
+
+var shouldSkip = map[string]bool{
+	"timestamp": true,
+	"level":     true,
+	"title":     true,
 }
 
 // buildJSONString is used as the default OutputHandler.
-func buildJSONString(level string, title string, body Body) string {
+func buildJSONString(data *LogData) string {
 	timestamp := time.Now().Format(time.RFC3339)
-
-	// Remove reserved keys from the input map:
-	delete(body, "timestamp")
-	delete(body, "level")
-	delete(body, "title")
 
 	values := []string{
 		`"timestamp":"` + timestamp + `"`,
-		`"level":"` + level + `"`,
-		`"title":` + escapeAsJSON(title),
+		`"level":"` + data.Level + `"`,
+		`"title":` + escapeAsJSON(data.Title),
 	}
 
-	for k, v := range body {
+	for k, v := range data.Body {
+		if shouldSkip[k] {
+			continue
+		}
 		values = append(values, escapeAsJSON(k)+`:`+escapeAsJSON(v))
 	}
 	sort.Strings(values[3:])

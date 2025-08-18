@@ -23,8 +23,17 @@ type Body = map[string]interface{}
 // MiddlewareProvider describes the behavior of accepting
 // middlewares that will be executed everytime a log function is called.
 type MiddlewareProvider interface {
-	AddMiddleware(m Middleware)
+	AddBeforeEach(m Middleware)
+	AddAfterEach(m Middleware)
 }
 
 // Middleware represents a klog.Middleware
-type Middleware func(level string, title string, body Body)
+type Middleware func(*LogData)
+
+// LogData represents all the data within a single log message
+// and is used by the Middleware and OutputHandler functions.
+type LogData struct {
+	Level string
+	Title string
+	Body  Body
+}

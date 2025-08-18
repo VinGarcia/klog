@@ -118,7 +118,11 @@ func TestBuildJSONString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			jsonString := buildJSONString(test.level, test.title, test.body)
+			jsonString := buildJSONString(&LogData{
+				Title: test.title,
+				Level: test.level,
+				Body:  test.body,
+			})
 
 			var output map[string]interface{}
 			err := json.Unmarshal([]byte(jsonString), &output)
@@ -142,8 +146,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -191,8 +195,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 1,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -207,8 +211,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -256,8 +260,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 2,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -272,8 +276,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -321,8 +325,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 3,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -337,8 +341,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 0,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -386,8 +390,8 @@ func TestLogFuncs(t *testing.T) {
 		ctx := context.TODO()
 		client := Client{
 			priorityLevel: 4,
-			OutputHandler: func(level string, title string, body Body) {
-				output = buildJSONString(level, title, body)
+			OutputHandler: func(d *LogData) {
+				output = buildJSONString(d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -402,15 +406,26 @@ func TestLogFuncs(t *testing.T) {
 
 		client := Client{
 			priorityLevel: 1, // Should not run the debug log
-			OutputHandler: func(level string, title string, body Body) {},
+			OutputHandler: func(*LogData) {},
 		}
 
-		var args []map[string]any
-		client.AddMiddleware(func(level string, title string, body Body) {
-			args = append(args, map[string]any{
-				"level": level,
-				"title": title,
-				"body":  body,
+		var args []LogData
+		client.AddBeforeEach(func(data *LogData) {
+			// Let's modify the title to assert this is possible, and how many times it happened:
+			data.Title += "."
+			args = append(args, LogData{
+				Level: data.Level,
+				Title: "before-" + data.Title,
+				Body:  data.Body,
+			})
+		})
+		client.AddAfterEach(func(data *LogData) {
+			// Let's modify the title to assert this is possible, and how many times it happened:
+			data.Title += "."
+			args = append(args, LogData{
+				Level: data.Level,
+				Title: "after-" + data.Title,
+				Body:  data.Body,
 			})
 		})
 
@@ -422,25 +437,47 @@ func TestLogFuncs(t *testing.T) {
 			Body{"errorLog": "value3", "other": "value4"},
 		)
 
-		assert.Equal(t, args, []map[string]any{
-			map[string]any{
-				"level": "INFO",
-				"title": "info-log-title",
-				"body": Body{
+		assert.Equal(t, args, []LogData{
+			LogData{
+				Level: "INFO",
+				Title: "before-info-log-title.",
+				Body: Body{
 					"infoLog": "value1",
 				},
 			},
-			map[string]any{
-				"level": "WARN",
-				"title": "warn-log-title",
-				"body": Body{
+			LogData{
+				Level: "INFO",
+				Title: "after-info-log-title..",
+				Body: Body{
+					"infoLog": "value1",
+				},
+			},
+			LogData{
+				Level: "WARN",
+				Title: "before-warn-log-title.",
+				Body: Body{
 					"warnLog": "value2",
 				},
 			},
-			map[string]any{
-				"level": "ERROR",
-				"title": "error-log-title",
-				"body": Body{
+			LogData{
+				Level: "WARN",
+				Title: "after-warn-log-title..",
+				Body: Body{
+					"warnLog": "value2",
+				},
+			},
+			LogData{
+				Level: "ERROR",
+				Title: "before-error-log-title.",
+				Body: Body{
+					"errorLog": "value3",
+					"other":    "value4",
+				},
+			},
+			LogData{
+				Level: "ERROR",
+				Title: "after-error-log-title..",
+				Body: Body{
 					"errorLog": "value3",
 					"other":    "value4",
 				},
@@ -453,23 +490,34 @@ func TestLogFuncs(t *testing.T) {
 
 		client := Client{
 			priorityLevel: 0,
-			OutputHandler: func(level string, title string, body Body) {},
+			OutputHandler: func(*LogData) {},
 		}
 
 		var args []string
-		client.AddMiddleware(func(level string, title string, body Body) {
-			args = append(args, "m1")
+		client.AddBeforeEach(func(*LogData) {
+			args = append(args, "b1")
 		})
-		client.AddMiddleware(func(level string, title string, body Body) {
-			args = append(args, "m2")
+		client.AddAfterEach(func(*LogData) {
+			args = append(args, "a1")
 		})
-		client.AddMiddleware(func(level string, title string, body Body) {
-			args = append(args, "m3")
+
+		client.AddBeforeEach(func(*LogData) {
+			args = append(args, "b2")
+		})
+		client.AddAfterEach(func(*LogData) {
+			args = append(args, "a2")
+		})
+
+		client.AddBeforeEach(func(*LogData) {
+			args = append(args, "b3")
+		})
+		client.AddAfterEach(func(*LogData) {
+			args = append(args, "a3")
 		})
 
 		client.Debug(ctx, "log-title")
 
-		assert.Equal(t, args, []string{"m1", "m2", "m3"})
+		assert.Equal(t, args, []string{"b1", "b2", "b3", "a1", "a2", "a3"})
 	})
 }
 
