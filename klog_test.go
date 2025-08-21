@@ -86,21 +86,6 @@ func TestBuildJSONString(t *testing.T) {
 			},
 		},
 		{
-			desc:  "should ignore reserved fields on body",
-			level: "fake-level",
-			title: "fake-title",
-			body: Body{
-				"level":     "fake-level2",
-				"title":     "fake-title2",
-				"timestamp": "fake-timestamp2",
-			},
-			expectedOutput: map[string]interface{}{
-				"level": "fake-level",
-				"title": "fake-title",
-				// "timestamp": "can't compare timestamps",
-			},
-		},
-		{
 			desc:  "should output an error log when unable to marshal the body",
 			level: "fake-level",
 			title: "fake-title",
@@ -518,6 +503,53 @@ func TestLogFuncs(t *testing.T) {
 		client.Debug(ctx, "log-title")
 
 		assert.Equal(t, args, []string{"b1", "b2", "b3", "a1", "a2", "a3"})
+	})
+
+	t.Run("should normalize the input data correctly", func(t *testing.T) {
+		ctx := context.TODO()
+
+		client := Client{
+			priorityLevel: 0,
+			OutputHandler: func(*LogData) {},
+		}
+
+		var beforeEachData LogData
+		client.AddBeforeEach(func(ctx context.Context, data *LogData) {
+			beforeEachData = *data
+		})
+
+		var afterEachData LogData
+		client.AddAfterEach(func(ctx context.Context, data *LogData) {
+			afterEachData = *data
+		})
+
+		client.Error(ctx, "log-title", Body{
+			"title":     "duplicatedTitle",
+			"level":     "duplicatedLevel",
+			"timestamp": "duplicatedTimestamp",
+			"key":       "overwritten",
+		}, Body{"key": "overwrites"})
+
+		assert.Equal(t, beforeEachData, LogData{
+			Title: "log-title",
+			Level: "ERROR",
+			Body: Body{
+				"body_title":     "duplicatedTitle",
+				"body_level":     "duplicatedLevel",
+				"body_timestamp": "duplicatedTimestamp",
+				"key":            "overwrites",
+			},
+		})
+		assert.Equal(t, afterEachData, LogData{
+			Title: "log-title",
+			Level: "ERROR",
+			Body: Body{
+				"body_title":     "duplicatedTitle",
+				"body_level":     "duplicatedLevel",
+				"body_timestamp": "duplicatedTimestamp",
+				"key":            "overwrites",
+			},
+		})
 	})
 }
 

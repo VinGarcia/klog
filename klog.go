@@ -135,6 +135,8 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 		Body:  body,
 	}
 
+	normalizeLogData(&data)
+
 	for _, m := range c.beforeEach {
 		m(ctx, &data)
 	}
@@ -146,10 +148,23 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 	}
 }
 
-var shouldSkip = map[string]bool{
-	"timestamp": true,
-	"level":     true,
-	"title":     true,
+// normalizeLogData normalizes the log data so that
+// it works smothly on the next steps
+func normalizeLogData(data *LogData) {
+	for _, k := range []string{"timestamp", "level", "title"} {
+		v, ok := data.Body[k]
+		if ok {
+			delete(data.Body, k)
+			data.Body["body_"+k] = v
+		}
+	}
+
+	// Make sure errors are printed as strings:
+	for k, v := range data.Body {
+		if e, _ := v.(error); e != nil {
+			data.Body[k] = e.Error()
+		}
+	}
 }
 
 // buildJSONString is used as the default OutputHandler.
@@ -163,9 +178,6 @@ func buildJSONString(data *LogData) string {
 	}
 
 	for k, v := range data.Body {
-		if shouldSkip[k] {
-			continue
-		}
 		values = append(values, escapeAsJSON(k)+`:`+escapeAsJSON(v))
 	}
 	sort.Strings(values[3:])
