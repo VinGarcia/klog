@@ -144,9 +144,8 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 				Level: "ERROR",
 				Title: "error running beforeEach log middleware",
 				Body: map[string]interface{}{
-					"error":          err,
-					"middlewareType": "beforeEach",
-					"data":           data,
+					"middlewareError": err.Error(),
+					"logData":         data,
 				},
 			})
 		}
@@ -161,9 +160,8 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 				Level: "ERROR",
 				Title: "error running afterEach log middleware",
 				Body: map[string]interface{}{
-					"error":          err,
-					"middlewareType": "beforeEach",
-					"data":           data,
+					"middlewareError": err.Error(),
+					"logData":         data,
 				},
 			})
 		}
