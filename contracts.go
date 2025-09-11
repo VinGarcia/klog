@@ -30,7 +30,7 @@ type MiddlewareProvider interface {
 // Middleware is a function that will be executed before or after
 // an event is logged depending on whether it was registered
 // with the AddBeforeEach or AddAfterEach method.
-type Middleware func(ctx context.Context, data *LogData)
+type Middleware func(ctx context.Context, data *LogData) error
 
 // LogData represents all the data within a single log message
 // and is used by the Middleware and OutputHandler functions.

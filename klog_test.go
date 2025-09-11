@@ -395,7 +395,7 @@ func TestLogFuncs(t *testing.T) {
 		}
 
 		var args []LogData
-		client.AddBeforeEach(func(ctx context.Context, data *LogData) {
+		client.AddBeforeEach(func(ctx context.Context, data *LogData) error {
 			// Let's modify the title to assert this is possible, and how many times it happened:
 			data.Title += "."
 			args = append(args, LogData{
@@ -403,8 +403,9 @@ func TestLogFuncs(t *testing.T) {
 				Title: "before-" + data.Title,
 				Body:  data.Body,
 			})
+			return nil
 		})
-		client.AddAfterEach(func(ctx context.Context, data *LogData) {
+		client.AddAfterEach(func(ctx context.Context, data *LogData) error {
 			// Let's modify the title to assert this is possible, and how many times it happened:
 			data.Title += "."
 			args = append(args, LogData{
@@ -412,6 +413,7 @@ func TestLogFuncs(t *testing.T) {
 				Title: "after-" + data.Title,
 				Body:  data.Body,
 			})
+			return nil
 		})
 
 		client.Debug(ctx, "debug-log-title", Body{"debugLog": "won't appear"})
@@ -479,25 +481,31 @@ func TestLogFuncs(t *testing.T) {
 		}
 
 		var args []string
-		client.AddBeforeEach(func(context.Context, *LogData) {
+		client.AddBeforeEach(func(context.Context, *LogData) error {
 			args = append(args, "b1")
+			return nil
 		})
-		client.AddAfterEach(func(context.Context, *LogData) {
+		client.AddAfterEach(func(context.Context, *LogData) error {
 			args = append(args, "a1")
+			return nil
 		})
 
-		client.AddBeforeEach(func(context.Context, *LogData) {
+		client.AddBeforeEach(func(context.Context, *LogData) error {
 			args = append(args, "b2")
+			return nil
 		})
-		client.AddAfterEach(func(context.Context, *LogData) {
+		client.AddAfterEach(func(context.Context, *LogData) error {
 			args = append(args, "a2")
+			return nil
 		})
 
-		client.AddBeforeEach(func(context.Context, *LogData) {
+		client.AddBeforeEach(func(context.Context, *LogData) error {
 			args = append(args, "b3")
+			return nil
 		})
-		client.AddAfterEach(func(context.Context, *LogData) {
+		client.AddAfterEach(func(context.Context, *LogData) error {
 			args = append(args, "a3")
+			return nil
 		})
 
 		client.Debug(ctx, "log-title")
@@ -514,13 +522,15 @@ func TestLogFuncs(t *testing.T) {
 		}
 
 		var beforeEachData LogData
-		client.AddBeforeEach(func(ctx context.Context, data *LogData) {
+		client.AddBeforeEach(func(ctx context.Context, data *LogData) error {
 			beforeEachData = *data
+			return nil
 		})
 
 		var afterEachData LogData
-		client.AddAfterEach(func(ctx context.Context, data *LogData) {
+		client.AddAfterEach(func(ctx context.Context, data *LogData) error {
 			afterEachData = *data
+			return nil
 		})
 
 		client.Error(ctx, "log-title", Body{

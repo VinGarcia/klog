@@ -138,13 +138,35 @@ func (c Client) log(ctx context.Context, level string, title string, valueMaps [
 	normalizeLogData(&data)
 
 	for _, m := range c.beforeEach {
-		m(ctx, &data)
+		err := m(ctx, &data)
+		if err != nil {
+			c.OutputHandler(&LogData{
+				Level: "ERROR",
+				Title: "error running beforeEach log middleware",
+				Body: map[string]interface{}{
+					"error":          err,
+					"middlewareType": "beforeEach",
+					"data":           data,
+				},
+			})
+		}
 	}
 
 	c.OutputHandler(&data)
 
 	for _, m := range c.afterEach {
-		m(ctx, &data)
+		err := m(ctx, &data)
+		if err != nil {
+			c.OutputHandler(&LogData{
+				Level: "ERROR",
+				Title: "error running afterEach log middleware",
+				Body: map[string]interface{}{
+					"error":          err,
+					"middlewareType": "beforeEach",
+					"data":           data,
+				},
+			})
+		}
 	}
 }
 
