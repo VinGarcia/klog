@@ -46,7 +46,8 @@ package main
 
 import (
 	"context"
-	"klog"
+
+	"github.com/vingarcia/klog"
 )
 
 type myLogKey struct{}

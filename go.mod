@@ -1,4 +1,4 @@
-module klog
+module github.com/vingarcia/klog
 
 go 1.15
 
