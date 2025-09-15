@@ -2,7 +2,6 @@ package klog
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -58,18 +57,16 @@ func TestBuildJSONString(t *testing.T) {
 		level          string
 		title          string
 		body           Body
-		expectedOutput map[string]interface{}
+		now            time.Time
+		expectedOutput string
 	}{
 		{
-			desc:  "should work with empty bodies",
-			level: "fake-level",
-			title: "fake-title",
-			body:  Body{},
-			expectedOutput: map[string]interface{}{
-				"level": "fake-level",
-				"title": "fake-title",
-				// "timestamp": "can't compare timestamps",
-			},
+			desc:           "should work with empty bodies",
+			level:          "fake-level",
+			title:          "fake-title",
+			body:           Body{},
+			now:            parseTime(t, "2024-10-09T09:00:00Z"),
+			expectedOutput: `{"timestamp":"2024-10-09T09:00:00Z","level":"fake-level","title":"fake-title"}`,
 		},
 		{
 			desc:  "should work with non empty bodies",
@@ -78,12 +75,8 @@ func TestBuildJSONString(t *testing.T) {
 			body: Body{
 				"fake-key": "fake-timestamp",
 			},
-			expectedOutput: map[string]interface{}{
-				"level": "fake-level",
-				"title": "fake-title",
-				// "timestamp": "can't compare timestamps",
-				"fake-key": "fake-timestamp",
-			},
+			now:            parseTime(t, "2024-10-09T09:00:00Z"),
+			expectedOutput: `{"timestamp":"2024-10-09T09:00:00Z","level":"fake-level","title":"fake-title","fake-key":"fake-timestamp"}`,
 		},
 		{
 			desc:  "should output an error log when unable to marshal the body",
@@ -92,35 +85,30 @@ func TestBuildJSONString(t *testing.T) {
 			body: Body{
 				"value": CannotBeMarshaled{},
 			},
-			expectedOutput: map[string]interface{}{
-				"level": "fake-level",
-				"title": "fake-title",
-				"value": fmt.Sprintf("%#v", CannotBeMarshaled{}),
-				// "timestamp": "can't compare timestamps",
+			now:            parseTime(t, "2024-10-09T09:00:00Z"),
+			expectedOutput: fmt.Sprintf(`{"timestamp":"2024-10-09T09:00:00Z","level":"fake-level","title":"fake-title","value":"%+v"}`, CannotBeMarshaled{}),
+		},
+		{
+			desc:  "should not escape html characters with unicode",
+			level: "fake-level",
+			title: "fake-title",
+			body: Body{
+				"someHtml": "<html><body></body></html>",
 			},
+			now:            parseTime(t, "2024-10-09T09:00:00Z"),
+			expectedOutput: `{"timestamp":"2024-10-09T09:00:00Z","level":"fake-level","title":"fake-title","someHtml":"<html><body></body></html>"}`,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			jsonString := buildJSONString(&LogData{
+			jsonString := buildJSONString(test.now, &LogData{
 				Title: test.title,
 				Level: test.level,
 				Body:  test.body,
 			})
 
-			var output map[string]interface{}
-			err := json.Unmarshal([]byte(jsonString), &output)
-			assert.Nil(t, err)
-
-			timestring, ok := output["timestamp"].(string)
-			assert.True(t, ok)
-
-			_, err = time.Parse(time.RFC3339, timestring)
-			assert.Nil(t, err)
-
-			delete(output, "timestamp")
-			assert.Equal(t, test.expectedOutput, output)
+			assert.Equal(t, test.expectedOutput, jsonString)
 		})
 	}
 }
@@ -132,7 +120,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 0,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -181,7 +169,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 1,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -197,7 +185,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 0,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -246,7 +234,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 2,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -262,7 +250,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 0,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -311,7 +299,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 3,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -327,7 +315,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 0,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -376,7 +364,7 @@ func TestLogFuncs(t *testing.T) {
 		client := Client{
 			priorityLevel: 4,
 			OutputHandler: func(d *LogData) {
-				output = buildJSONString(d)
+				output = buildJSONString(parseTime(t, "2024-10-09T09:00:00Z"), d)
 			},
 			ctxParsers: []ContextParser{getCtxValues},
 		}
@@ -583,4 +571,12 @@ func getCtxValues(ctx context.Context) Body {
 		return Body{}
 	}
 	return m
+}
+
+func parseTime(t *testing.T, timeStr string) time.Time {
+	dateTime, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		t.Fatalf("unable to parse input time string '%s' as RFC3339: %s", timeStr, err)
+	}
+	return dateTime.UTC()
 }

@@ -1,6 +1,7 @@
 package klog
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,8 @@ var _ MiddlewareProvider = &Client{}
 
 // Client represents our logger instance.
 type Client struct {
+	timeNow func() time.Time
+
 	priorityLevel uint
 	OutputHandler func(*LogData)
 	beforeEach    []Middleware
@@ -29,7 +32,7 @@ type Client struct {
 type ContextParser func(ctx context.Context) Body
 
 // New builds a logger Client on the appropriate log level
-func New(level string, parsers ...ContextParser) Client {
+func New(level string, parsers ...ContextParser) *Client {
 	var priority uint
 	switch strings.ToUpper(level) {
 	case "DEBUG":
@@ -44,13 +47,17 @@ func New(level string, parsers ...ContextParser) Client {
 		priority = 1
 	}
 
-	return Client{
+	client := &Client{
+		timeNow:       time.Now,
 		priorityLevel: priority,
 		ctxParsers:    parsers,
-		OutputHandler: func(data *LogData) {
-			fmt.Println(buildJSONString(data))
-		},
 	}
+
+	client.OutputHandler = func(data *LogData) {
+		fmt.Println(buildJSONString(client.timeNow(), data))
+	}
+
+	return client
 }
 
 // AddBeforeEach adds a new middleware to the list that runs before
@@ -188,8 +195,8 @@ func normalizeLogData(data *LogData) {
 }
 
 // buildJSONString is used as the default OutputHandler.
-func buildJSONString(data *LogData) string {
-	timestamp := time.Now().Format(time.RFC3339)
+func buildJSONString(now time.Time, data *LogData) string {
+	timestamp := now.Format(time.RFC3339)
 
 	values := []string{
 		`"timestamp":"` + timestamp + `"`,
@@ -206,9 +213,14 @@ func buildJSONString(data *LogData) string {
 }
 
 func escapeAsJSON(obj interface{}) string {
-	rawJSON, err := json.Marshal(obj)
+	var rawJSON bytes.Buffer
+	enc := json.NewEncoder(&rawJSON)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(obj)
 	if err != nil {
-		return escapeAsJSON(fmt.Sprintf("%#v", obj))
+		return escapeAsJSON(fmt.Sprintf("%+v", obj))
 	}
-	return string(rawJSON)
+
+	// Remove the extra \n the Encode function adds to the output:
+	return strings.TrimSuffix(rawJSON.String(), "\n")
 }
